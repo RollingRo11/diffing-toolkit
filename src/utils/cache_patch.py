@@ -6,9 +6,12 @@ nnsight's lazy/meta device models.
 import torch
 from dictionary_learning.cache import ActivationCache
 
-# Store the original collect method's underlying function
-# ActivationCache.collect is a classmethod, so we need to get the actual function
-_original_collect_func = ActivationCache.collect.__func__
+# Store the original collect method
+# Handle both classmethod (has __func__) and regular function cases
+if hasattr(ActivationCache.collect, '__func__'):
+    _original_collect_func = ActivationCache.collect.__func__
+else:
+    _original_collect_func = ActivationCache.collect
 
 
 def _get_target_device(model):
