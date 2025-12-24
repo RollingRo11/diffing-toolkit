@@ -6,8 +6,9 @@ nnsight's lazy/meta device models.
 import torch
 from dictionary_learning.cache import ActivationCache
 
-# Store the original collect method
-_original_collect = ActivationCache.collect
+# Store the original collect method's underlying function
+# ActivationCache.collect is a classmethod, so we need to get the actual function
+_original_collect_func = ActivationCache.collect.__func__
 
 
 def _get_target_device(model):
@@ -26,7 +27,7 @@ def _get_target_device(model):
     return device
 
 
-def _make_patched_collect():
+def _make_patched_collect(original_func):
     """Create the patched collect method."""
 
     @classmethod
@@ -59,7 +60,7 @@ def _make_patched_collect():
             model_class.device = property(lambda self: target_device)
 
             try:
-                return _original_collect.__func__(
+                return original_func(
                     cls, texts, submodules, submodule_names, model, out_dir,
                     *args, **kwargs
                 )
@@ -68,7 +69,7 @@ def _make_patched_collect():
                 model_class.device = original_device_property
         else:
             # Device is fine, just call the original
-            return _original_collect.__func__(
+            return original_func(
                 cls, texts, submodules, submodule_names, model, out_dir,
                 *args, **kwargs
             )
@@ -78,7 +79,7 @@ def _make_patched_collect():
 
 def apply_cache_patch():
     """Apply the monkey-patch to ActivationCache.collect."""
-    ActivationCache.collect = _make_patched_collect()
+    ActivationCache.collect = _make_patched_collect(_original_collect_func)
 
 
 # Auto-apply the patch when this module is imported
