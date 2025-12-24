@@ -9,7 +9,7 @@ openrouter_api_key.txt
 .streamlit_cache/
 .old_configs/*
 run/sweep*
-results/*   
+results/*
 data/raw/*
 data/**
 *.png
@@ -17,6 +17,10 @@ data/**
 __pycache__/
 *.py[cod]
 *$py.class
+
+.UV_CACHE/
+.HF_CACHE/
+.datastorage/
 
 slurm/*
 *.pkl

@@ -1,0 +1,14 @@
+# @package organism
+name: r1_distillation
+description: DeepSeek R1 distillation on Qwen models
+type: General
+description_long: |
+  Compares base Qwen models to their DeepSeek R1-distilled reasoning variants.
+  R1 distillation transfers reasoning capabilities from DeepSeek-R1 to smaller models.
+finetuned_models:
+  qwen25_1_5B:
+    default:
+      model_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+  qwen25_7B:
+    default:
+      model_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-7B

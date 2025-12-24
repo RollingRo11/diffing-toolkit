@@ -209,12 +209,21 @@ def load_model(
             subfolder=subfolder if adapter_id is None else "",
             trust_remote_code=trust_remote_code,
         )
+        # Determine target device for non-CUDA systems
+        _target_device = None
         if device_map is not None:
             fp_kwargs["device_map"] = device_map
         elif no_auto_device_map:
             fp_kwargs["device_map"] = "cuda"
-        else:
+        elif th.cuda.is_available():
             fp_kwargs["device_map"] = "auto"
+        else:
+            # Non-CUDA: don't use device_map (causes meta tensor issues)
+            # We'll move the model to the right device after loading
+            if th.backends.mps.is_available():
+                _target_device = "mps"
+            else:
+                _target_device = "cpu"
         automodel = AutoModelForCausalLM
         if "Qwen2.5-VL" in model_name:
             from transformers import Qwen2_5_VLForConditionalGeneration
@@ -278,11 +287,18 @@ def load_model(
             )
 
             if no_auto_device_map and device_map is None:
+                model.dispatch()
                 model.to("cuda")
+            elif _target_device is not None:
+                # Non-CUDA: dispatch first to materialize model from meta device,
+                # then move to target device (MPS or CPU)
+                model.dispatch()
+                model.to(_target_device)
 
             if adapter_id:
                 logger.info(f"Loading adapter: {adapter_id}")
-                model.dispatch()  # dispatch is needed to be able to load the adapters on the right device
+                if not model.dispatched:
+                    model.dispatch()  # dispatch is needed to be able to load the adapters on the right device
                 model.load_adapter(adapter_id, adapter_kwargs={"subfolder": subfolder})
 
     if steering_vector_name is not None and steering_layer_idx is not None:
