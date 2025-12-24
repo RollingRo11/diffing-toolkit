@@ -35,20 +35,18 @@ def _make_patched_collect(original_func):
 
     @classmethod
     @torch.no_grad()
-    def patched_collect(
-        cls,
-        texts,
-        submodules,
-        submodule_names,
-        model,
-        out_dir,
-        *args,
-        **kwargs
-    ):
+    def patched_collect(cls, *args, **kwargs):
         """
         Patched collect method that handles meta device models.
         Temporarily overrides model's device property to return the correct device.
         """
+        # model is the 4th positional argument (after texts, submodules, submodule_names)
+        model = args[3] if len(args) > 3 else kwargs.get('model')
+
+        if model is None:
+            # Can't determine model, just call original
+            return original_func(cls, *args, **kwargs)
+
         original_device = model.device
 
         # Check if device is meta (nnsight lazy loading)
@@ -63,19 +61,13 @@ def _make_patched_collect(original_func):
             model_class.device = property(lambda self: target_device)
 
             try:
-                return original_func(
-                    cls, texts, submodules, submodule_names, model, out_dir,
-                    *args, **kwargs
-                )
+                return original_func(cls, *args, **kwargs)
             finally:
                 # Restore the original device property
                 model_class.device = original_device_property
         else:
             # Device is fine, just call the original
-            return original_func(
-                cls, texts, submodules, submodule_names, model, out_dir,
-                *args, **kwargs
-            )
+            return original_func(cls, *args, **kwargs)
 
     return patched_collect
 
