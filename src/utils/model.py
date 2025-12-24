@@ -286,19 +286,17 @@ def load_model(
                 **fp_kwargs,
             )
 
+            # Always dispatch to materialize model from meta device
+            model.dispatch()
+
             if no_auto_device_map and device_map is None:
-                model.dispatch()
                 model.to("cuda")
             elif _target_device is not None:
-                # Non-CUDA: dispatch first to materialize model from meta device,
-                # then move to target device (MPS or CPU)
-                model.dispatch()
+                # Non-CUDA: move to target device (MPS or CPU)
                 model.to(_target_device)
 
             if adapter_id:
                 logger.info(f"Loading adapter: {adapter_id}")
-                if not model.dispatched:
-                    model.dispatch()  # dispatch is needed to be able to load the adapters on the right device
                 model.load_adapter(adapter_id, adapter_kwargs={"subfolder": subfolder})
 
     if steering_vector_name is not None and steering_layer_idx is not None:
