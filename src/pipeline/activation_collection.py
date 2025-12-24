@@ -12,6 +12,9 @@ sys.path.append(".")
 from typing import List, Optional, Any
 from dictionary_learning.cache import ActivationCache
 from datasets import Dataset
+
+# Apply patch to handle nnsight's lazy/meta device models
+from ..utils import cache_patch  # noqa: F401
 from loguru import logger
 import torch
 from ..utils import ModelConfig
